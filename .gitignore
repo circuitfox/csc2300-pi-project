@@ -43,3 +43,4 @@ dist/
 .tox/
 .cache/
 .hypothesis/
+__pycache__/
