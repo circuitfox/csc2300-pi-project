@@ -1,7 +1,10 @@
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Extension
 from setuptools.command.test import test as TestCommand
+from numpy.distutils.misc_util import get_numpy_include_dirs
 from codecs import open
 from os import path
+
+here = path.abspath(path.dirname(__file__))
 
 class Tox(TestCommand):
     user_options = [("tox-args=", "a",
@@ -9,11 +12,6 @@ class Tox(TestCommand):
     def initialize_options(self):
         TestCommand.initialize_options(self)
         self.tox_args = None
-
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
 
     def run_tests(self):
         import tox
@@ -23,8 +21,6 @@ class Tox(TestCommand):
             args = shlex.split(self.tox_args)
         errno = tox.cmdline(args=args)
         sys.exit(errno)
-
-here = path.abspath(path.dirname(__file__))
 
 with open(path.join(here, "README.rst"), encoding="utf-8") as f:
     long_description = f.read()
@@ -46,9 +42,15 @@ setup(
         "Programming Language :: Python :: 3",
     ],
     packages=find_packages(exclude=['docs', 'tests']),
-    install_requires=["RPi.GPIO", "picamera"],
+    install_requires=["RPi.GPIO", "picamera", "readchar", "numpy"],
     tests_require=["tox"],
     cmdclass={"test": Tox},
+    data_files=[("/etc/pi_rtvp", [path.join(here, "conf/ffserver.rtvp.conf")])],
+    ext_modules=[
+        Extension("pi_rtvp.cutil", ["pi_rtvp/py_cutil.c", "pi_rtvp/cutil.c"]),
+        Extension("pi_rtvp.convolve", ["pi_rtvp/py_convolve.c", "pi_rtvp/convolve.c"]),
+    ],
+    include_dirs=get_numpy_include_dirs(),
     entry_points={
         "console_scripts": [
             "pi_rtvp=pi_rtvp:main"
