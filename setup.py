@@ -47,8 +47,12 @@ setup(
     cmdclass={"test": Tox},
     data_files=[("/etc/pi_rtvp", [path.join(here, "conf/ffserver.rtvp.conf")])],
     ext_modules=[
-        Extension("pi_rtvp.cutil", ["pi_rtvp/py_cutil.c", "pi_rtvp/cutil.c"]),
-        Extension("pi_rtvp.convolve", ["pi_rtvp/py_convolve.c", "pi_rtvp/convolve.c"]),
+        Extension("pi_rtvp.cutil",
+                  ["pi_rtvp/py_cutil.c", "pi_rtvp/cutil.c"],
+                  extra_compile_args=["-std=c99"]),
+        Extension("pi_rtvp.matrix", 
+                  ["pi_rtvp/py_matrix.c", "pi_rtvp/matrix.c"],
+                  extra_compile_args=["-std=c99"]),
     ],
     include_dirs=get_numpy_include_dirs(),
     entry_points={

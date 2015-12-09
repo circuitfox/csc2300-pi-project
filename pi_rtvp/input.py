@@ -3,6 +3,7 @@ from os import killpg
 import pi_rtvp.camera as camera
 import pi_rtvp.kernel as kernel
 import pi_rtvp.png as png
+import pi_rtvp.motor as motor
 from pi_rtvp.util import get_ffserver_conf
 from subprocess import Popen, PIPE, DEVNULL
 from readchar import readchar
@@ -35,6 +36,8 @@ stream                                Stream processed video over http
         if prompt[0] == "stream":
             print("Press enter to end the stream")
             stream_file(state)
+        motor.set_yaw(state, state.yaw)
+        motor.set_pitch(state, state.pitch)
 
 def get(state, var):
     if var == None:
@@ -45,7 +48,12 @@ def get(state, var):
 def set(state, var, value):
     if var in ["yaw", "pitch"]:
         try:
-            int(value)
+            if value[0] == '+' or value[0] == '-':
+                val = getattr(state, var) + int(value)
+            else:
+                val = int(value)
+            setattr(state, var, val)
+            return state
         except ValueError:
             return state
     elif var == "output":

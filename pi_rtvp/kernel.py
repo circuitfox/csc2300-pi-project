@@ -3,7 +3,7 @@ from math import sqrt
 import numpy as np
 from pi_rtvp.util import fullname
 from pi_rtvp.png import PNGImage
-import pi_rtvp.convolve as convolve
+import pi_rtvp.matrix as matrix
 
 class ImageKernel(object):
     def __init__(self, name, size, values):
@@ -11,13 +11,7 @@ class ImageKernel(object):
         self.size = size
         if values.size != size*size:
             raise ValueError("values is not an NxN matrix")
-        self.values = values.ravel()
-
-    def __getitem__(self, key):
-        return self.values[key]
-
-    def __len__(self):
-        return self.size
+        self.values = values
 
     def __repr__(self):
         return "{}({!r}, {!r}, {!r})".format(fullname(self), self.name,
@@ -26,26 +20,33 @@ class ImageKernel(object):
     def __str__(self):
         return "Kernel {!r}, size {}x{}".format(self.name, self.size, self.size)
 
-    def convolve(self, data):
-        return convolve.convolve(data, self.values, self.size)
-
     def convolve_image(self, image):
-        h = image.height
         res_image = PNGImage(None, image.width, image.height,
-                             np.empty(image.height * image.width, dtype=np.uint8),
+                             np.empty((image.height, image.width), dtype=np.uint8),
                              image.info)
-        for i in range(0, image.height):
-            for j in range (0, image.width):
-                res_image[i * h + j] = self.convolve(image.get_matrix_at(i, j, self.size))
+        res_image.data = matrix.convolve_image(image.data, self.values,
+                                                 image.height, image.width,
+                                                 self.size)
         return res_image
 
 class IdImageKernel(ImageKernel):
-    def convolve(self, data):
-        return convolve.convolve_id(data, self.size)
+    def convolve_image(self, image):
+        res_image = PNGImage(None, image.width, image.height,
+                             np.empty((image.height, image.width), dtype=np.uint8),
+                             image.info)
+        res_image.data = matrix.convolve_image_id(image.data, image.height,
+                                                  image.width, self.size)
+        return res_image
 
 class GaussianImageKernel(ImageKernel):
-    def convolve(self, data):
-        return convolve.convolve_gaussian(data, self.values, self.size)
+    def convolve_image(self, image):
+        res_image = PNGImage(None, image.width, image.height,
+                             np.empty((image.height, image.width), dtype=np.uint8),
+                             image.info)
+        res_image.data = matrix.convolve_image_gaussian(image.data, self.values,
+                                                        image.height, image.width,
+                                                        self.size)
+        return res_image
 
 class SobelImageKernel(ImageKernel):
     def __init__(self, name, size, data_x, data_y):
@@ -57,9 +58,14 @@ class SobelImageKernel(ImageKernel):
         return "{}({!r}, {!r}, {!r}, {!r})".format(fullname(self), self.name,
                                                    self.size, self.data_x, self.data_y)
 
-    def convolve(self, data):
-        return convolve.convolve_sobel(data, self.data_x,
-                                       self.data_y, self.size)
+    def convolve_image(self, image):
+        res_image = PNGImage(None, image.width, image.height,
+                             np.empty((image.height, image.width), dtype=np.uint8),
+                             image.info)
+        res_image.data = matrix.convolve_image_sobel(image.data, self.data_x, self.data_y,
+                                                     image.height, image.width,
+                                                     self.size)
+        return res_image
 
 class SobelGaussianImageKernel(ImageKernel):
     def __init__(self, name, size, sobel, guassian):
@@ -86,7 +92,7 @@ def generate_mean(size):
 def generate_gaussian(size):
     if size % 2 == 0:
         return None
-    median = int(size / 2)
+    median = size // 2
     data = []
     for i in range(0, median+1):
         for j in range(0, median+1):
