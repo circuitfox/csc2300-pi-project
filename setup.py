@@ -53,6 +53,10 @@ setup(
         Extension("pi_rtvp.matrix", 
                   ["pi_rtvp/py_matrix.c", "pi_rtvp/matrix.c"],
                   extra_compile_args=["-std=c99"]),
+        Extension("pi_rtvp.image",
+                  ["pi_rtvp/py_image.c", "pi_rtvp/image.c"],
+                  extra_compile_args=["-std=c99"],
+                  libraries=["png"]),
     ],
     include_dirs=get_numpy_include_dirs(),
     entry_points={
